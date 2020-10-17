@@ -1,4 +1,5 @@
 using CrudPatrimonioEmpresarialJWT.Data;
+using CrudPatrimonioEmpresarialJWT.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +9,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System;
+using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace CrudPatrimonioEmpresarialJWT
@@ -15,6 +20,7 @@ namespace CrudPatrimonioEmpresarialJWT
     public class Startup
     {
         public IConfiguration Configuration { get; }
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -28,7 +34,6 @@ namespace CrudPatrimonioEmpresarialJWT
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-            services.AddControllers();
 
             services.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
@@ -58,6 +63,26 @@ namespace CrudPatrimonioEmpresarialJWT
                     ValidIssuer = appSettings.Emissor
                 };
             });
+
+            services.AddControllers();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gerenciamento de Patrimonio", Version = "v1", });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+                c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+
+                c.AddSecurityDefinition("bearer", new ApiKeyScheme
+                {
+                    In = "header",
+                    Description = "Autenticação baseada em Json Web Token (JWT)",
+                    Name = "Authorization",
+                    Type = "apiKey"
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,13 +97,24 @@ namespace CrudPatrimonioEmpresarialJWT
 
             app.UseRouting();
 
-            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                /*serve para abrir o swagger logo que rodar a aplicação, se não quiser assim,
+                é so setar o valor pra "swagger", assim so ira aparecer quando digitar swagger na rota*/
+                c.RoutePrefix = "swagger";
+
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+            });
+
         }
     }
 }

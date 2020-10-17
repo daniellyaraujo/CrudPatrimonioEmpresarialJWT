@@ -17,17 +17,18 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly AppSettings _appSettings;
+        private readonly IOptions<AppSettings> _appSettings;
+
 
         public AuthController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IOptions<AppSettings> appSettings)
         {
             _signInManager = signInManager;
             _userManager = userManager;
-            _appSettings = (AppSettings)appSettings;
+            _appSettings = appSettings;
         }
 
         [HttpPost("nova-conta")]
-        public async Task<ActionResult> RegistrarAsync (RegisterUser registerUser)
+        public async Task<ActionResult> RegistrarAsync ([FromBody]RegisterUser registerUser)
         {
             //se for valido ele passa, se não for ele retorna um bad request com todos os erros que encontrou.
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
@@ -49,7 +50,7 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
         }
 
         [HttpPost("entrar")]
-        public async Task<ActionResult> LoginAsync(LoginUser loginUser)
+        public async Task<ActionResult> LoginAsync([FromBody]LoginUser loginUser)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
 
@@ -67,14 +68,14 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
         {
             _ = await _userManager.FindByEmailAsync(email);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+            var key = Encoding.ASCII.GetBytes(_appSettings.Value.Secret);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = _appSettings.Emissor,
-                Audience = _appSettings.ValidoEm,
+                Issuer = _appSettings.Value.Emissor,
+                Audience = _appSettings.Value.ValidoEm,
                 //formato utc pra nao ter erro de onde a pessoa q executou está rs.
-                Expires = DateTime.UtcNow.AddHours(_appSettings.ExpiracaoHoras),
+                Expires = DateTime.UtcNow.AddHours(_appSettings.Value.ExpiracaoHoras),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
