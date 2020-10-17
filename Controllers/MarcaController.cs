@@ -20,7 +20,7 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers
             _context = context;
         }
 
-        [Authorize]
+       // [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MarcaModel>>> GetMarcaAsync()
         {

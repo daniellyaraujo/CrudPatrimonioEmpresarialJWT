@@ -17,7 +17,8 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly AppSettings _appSettings;
+        private readonly IOptions<AppSettings> _appSettings;
+
 
         public AuthController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IOptions<AppSettings> appSettings)
         {
@@ -27,7 +28,7 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
         }
 
         [HttpPost("nova-conta")]
-        public async Task<ActionResult> Registrar (RegisterUser registerUser)
+        public async Task<ActionResult> RegistrarAsync ([FromBody]RegisterUser registerUser)
         {
             //se for valido ele passa, se não for ele retorna um bad request com todos os erros que encontrou.
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
@@ -45,11 +46,11 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
 
             await _signInManager.SignInAsync(user, false);
 
-            return Ok(await GerarJWT(registerUser.Email));
+            return Ok(await GerarJWTAsync(registerUser.Email));
         }
 
         [HttpPost("entrar")]
-        public async Task<ActionResult> Login(LoginUser loginUser)
+        public async Task<ActionResult> LoginAsync([FromBody]LoginUser loginUser)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
 
@@ -57,24 +58,24 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
 
             if (result.Succeeded)
             {
-                return Ok(await GerarJWT(loginUser.Email));
+                return Ok(await GerarJWTAsync(loginUser.Email));
             }
 
             return BadRequest("Usuário ou senha Inválidos");
         }
 
-        private async Task<string> GerarJWT (string email)
+        private async Task<string> GerarJWTAsync (string email)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            _ = await _userManager.FindByEmailAsync(email);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+            var key = Encoding.ASCII.GetBytes(_appSettings.Value.Secret);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = _appSettings.Emissor,
-                Audience = _appSettings.ValidoEm,
+                Issuer = _appSettings.Value.Emissor,
+                Audience = _appSettings.Value.ValidoEm,
                 //formato utc pra nao ter erro de onde a pessoa q executou está rs.
-                Expires = DateTime.UtcNow.AddHours(_appSettings.ExpiracaoHoras),
+                Expires = DateTime.UtcNow.AddHours(_appSettings.Value.ExpiracaoHoras),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
