@@ -23,7 +23,7 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
         {
             _signInManager = signInManager;
             _userManager = userManager;
-            _appSettings = appSettings;
+            _appSettings = (AppSettings)appSettings;
         }
 
         [HttpPost("nova-conta")]
