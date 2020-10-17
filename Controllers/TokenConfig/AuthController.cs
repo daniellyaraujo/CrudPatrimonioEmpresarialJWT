@@ -27,7 +27,7 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
         }
 
         [HttpPost("nova-conta")]
-        public async Task<ActionResult> Registrar (RegisterUser registerUser)
+        public async Task<ActionResult> RegistrarAsync (RegisterUser registerUser)
         {
             //se for valido ele passa, se não for ele retorna um bad request com todos os erros que encontrou.
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
@@ -45,11 +45,11 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
 
             await _signInManager.SignInAsync(user, false);
 
-            return Ok(await GerarJWT(registerUser.Email));
+            return Ok(await GerarJWTAsync(registerUser.Email));
         }
 
         [HttpPost("entrar")]
-        public async Task<ActionResult> Login(LoginUser loginUser)
+        public async Task<ActionResult> LoginAsync(LoginUser loginUser)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
 
@@ -57,15 +57,15 @@ namespace CrudPatrimonioEmpresarialJWT.Controllers.TokenConfig
 
             if (result.Succeeded)
             {
-                return Ok(await GerarJWT(loginUser.Email));
+                return Ok(await GerarJWTAsync(loginUser.Email));
             }
 
             return BadRequest("Usuário ou senha Inválidos");
         }
 
-        private async Task<string> GerarJWT (string email)
+        private async Task<string> GerarJWTAsync (string email)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            _ = await _userManager.FindByEmailAsync(email);
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
 
